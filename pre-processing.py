@@ -11,6 +11,7 @@ Transformações realizadas:
 - Redimensiona proporcionalmente com padding (garante a padronização das imagens em 512x512)
 
 """
+
 def preprocess_image(image_path, annotation_path, output_dir, target_size=(512,512)):
     os.makedirs(output_dir, exist_ok=True)
     basename = os.path.splitext(os.path.basename(image_path))[0]
@@ -47,3 +48,36 @@ def preprocess_image(image_path, annotation_path, output_dir, target_size=(512,5
     annotations = pd.read_csv(annotation_path, header=None, names=["label", "x", "y", "filename", "width", "height"])
     img_ann = annotations[annotations["filename"] == original_filename].copy()
     img_ann["x"] = img_ann["x"] * scale + left
+    img_ann["y"] = img_ann["y"] * scale + top
+
+    # salvando imagem e anotacoes
+    def save_variation(image, annotations_dataframe, suffix):
+        filename = f"{basename}_{suffix}.png"
+        csv_name = f"{basename}_{suffix}.png"
+
+        image_path = os.path.join(output_dir, filename)
+        csv_path = os.path.join(output_dir, csv_name)
+
+        #atualizar dataframe
+        annotations_dataframe = annotations_dataframe.copy()
+        annotations_dataframe["filename"] = filename
+        annotations_dataframe["height"] = target_size[0]
+        annotations_dataframe["width"] = target_size[1]
+
+        # salvando
+        cv.imwrite(image_path, image)
+        annotations_dataframe.to_csv(csv_path, header=False, index=False)
+    
+    #salvar versao clahe
+    save_variation(padded, img_ann, f"1_clahe")
+
+    # rotaciona imagem e salva
+    top_rot, bot_rot = target_size[1] // 2, target_size[0] // 2
+    M = cv.getRotationMatrix2D((top_rot, bot_rot), angle=5, scale=1.0)
+    rotated = cv.warpAffine(padded, target_size, borderMode=cv.BORDER_CONSTANT, borderValue=0)
+
+    coords = img_ann[["x","y"]].values #pego as coordenadas nas dimensoes (x,y) -> um array de shape (N,2)
+    ones = np.ones((coords.shape[0], 1)) # adiciono mais uma dimensao (x, y, 1) pra conseguir rotacionar
+    coords_homog = np.hstack([coords, ones])
+    rotated_coords = coords_homog @ M.T #multiplico a matriz dos pontos pela matriz de rotacao
+    
