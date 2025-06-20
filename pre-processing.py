@@ -26,9 +26,9 @@ def preprocess_image(image_path, annotation_path, output_dir, target_size=(512,5
     out_img = clahe.apply(gray)
 
     # redimensionando
-    height, widht = out_img.shape #pegando dimensoes
-    scale = min(target_size[0] / height, target_size[1] / widht) #definindo scala
-    new_wid = int(widht * scale)
+    height, width  = out_img.shape #pegando dimensoes
+    scale = min(target_size[0] / height, target_size[1] / width ) #definindo scala
+    new_wid = int(width  * scale)
     new_heig = int(height * scale)
     resized_img = cv.resize(out_img, (new_wid,new_heig), interpolation=cv.INTER_AREA) #interpolation torna a redução de resolução mais suave
 
@@ -53,7 +53,7 @@ def preprocess_image(image_path, annotation_path, output_dir, target_size=(512,5
     # rotaciona imagem e salva
     top_rot, bot_rot = target_size[1] // 2, target_size[0] // 2
     M = cv.getRotationMatrix2D((top_rot, bot_rot), angle=5, scale=1.0)
-    rotated = cv.warpAffine(padded, target_size, borderMode=cv.BORDER_CONSTANT, borderValue=0)
+    rotated = cv.warpAffine(padded, M, target_size, borderMode=cv.BORDER_CONSTANT, borderValue=0)
 
     coords = img_ann[["x","y"]].values #pego as coordenadas nas dimensoes (x,y) -> um array de shape (N,2)
     ones = np.ones((coords.shape[0], 1)) # adiciono mais uma dimensao (x, y, 1) pra conseguir rotacionar
@@ -72,7 +72,7 @@ def preprocess_image(image_path, annotation_path, output_dir, target_size=(512,5
      # salvando imagem e anotacoes
     def save_variation(image, annotations_dataframe, suffix):
         filename = f"{basename}_{suffix}.png"
-        csv_name = f"{basename}_{suffix}.png"
+        csv_name = f"{basename}_{suffix}.csv"
 
         image_path = os.path.join(output_dir, filename)
         csv_path = os.path.join(output_dir, csv_name)
