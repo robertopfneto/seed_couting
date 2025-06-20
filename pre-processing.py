@@ -48,9 +48,28 @@ def preprocess_image(image_path, annotation_path, output_dir, target_size=(512,5
     annotations = pd.read_csv(annotation_path, header=None, names=["label", "x", "y", "filename", "width", "height"])
     img_ann = annotations[annotations["filename"] == original_filename].copy()
     img_ann["x"] = img_ann["x"] * scale + left
-    img_ann["y"] = img_ann["y"] * scale + top
+    img_ann["y"] = img_ann["y"] * scale + top    
 
-    # salvando imagem e anotacoes
+    # rotaciona imagem e salva
+    top_rot, bot_rot = target_size[1] // 2, target_size[0] // 2
+    M = cv.getRotationMatrix2D((top_rot, bot_rot), angle=5, scale=1.0)
+    rotated = cv.warpAffine(padded, target_size, borderMode=cv.BORDER_CONSTANT, borderValue=0)
+
+    coords = img_ann[["x","y"]].values #pego as coordenadas nas dimensoes (x,y) -> um array de shape (N,2)
+    ones = np.ones((coords.shape[0], 1)) # adiciono mais uma dimensao (x, y, 1) pra conseguir rotacionar
+    coords_homog = np.hstack([coords, ones])
+    rotated_coords = coords_homog @ M.T #multiplico a matriz dos pontos pela matriz de rotacao
+    
+    rotated_ann = img_ann.copy()
+    rotated_ann["x"] = rotated_coords[:, 0]
+    rotated_ann["y"] = rotated_coords[:, 1]
+
+    # Criar e salvar imagem com brilho aumentado
+    contrast = 1.1 
+    bright = 15
+    brighted_img = cv.convertScaleAbs(padded, alpha=contrast, beta=bright) #aumenta contraste em 10% e aumenta 15 de brilho por pixel
+
+     # salvando imagem e anotacoes
     def save_variation(image, annotations_dataframe, suffix):
         filename = f"{basename}_{suffix}.png"
         csv_name = f"{basename}_{suffix}.png"
@@ -70,14 +89,7 @@ def preprocess_image(image_path, annotation_path, output_dir, target_size=(512,5
     
     #salvar versao clahe
     save_variation(padded, img_ann, f"1_clahe")
-
-    # rotaciona imagem e salva
-    top_rot, bot_rot = target_size[1] // 2, target_size[0] // 2
-    M = cv.getRotationMatrix2D((top_rot, bot_rot), angle=5, scale=1.0)
-    rotated = cv.warpAffine(padded, target_size, borderMode=cv.BORDER_CONSTANT, borderValue=0)
-
-    coords = img_ann[["x","y"]].values #pego as coordenadas nas dimensoes (x,y) -> um array de shape (N,2)
-    ones = np.ones((coords.shape[0], 1)) # adiciono mais uma dimensao (x, y, 1) pra conseguir rotacionar
-    coords_homog = np.hstack([coords, ones])
-    rotated_coords = coords_homog @ M.T #multiplico a matriz dos pontos pela matriz de rotacao
-    
+    #salvar versao rotacionada
+    save_variation(rotated, rotated_ann, "2_rotated")
+    #salvar versao com aumento de constraste e brilho
+    save_variation(brighted_img, img_ann, "3_bright")
