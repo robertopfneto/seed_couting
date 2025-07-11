@@ -1,1 +1,1 @@
-pip install opencv-python pandas numpy
+pip install opencv-python pandas numpy pillow imgaug
