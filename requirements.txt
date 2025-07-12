@@ -1,0 +1,18 @@
+# Core
+numpy==1.26.4
+pandas==2.2.2
+scipy==1.13.1
+opencv-python==4.9.0.80
+matplotlib==3.7.4
+pyyaml==6.0.1
+tqdm==4.66.4
+
+# Deep learning
+torch==2.2.2
+torchvision==0.17.2
+ultralytics==8.2.13  # YOLOv8 oficial
+
+# Utilitários
+pyarrow==15.0.2
+requests==2.31.0
+jsonschema==4.21.1
