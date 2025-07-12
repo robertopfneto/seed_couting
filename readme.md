@@ -1,1 +1,1 @@
-pip install opencv-python pandas numpy pillow imgaug
+conda create -n seedai python==3.9
